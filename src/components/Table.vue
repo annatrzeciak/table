@@ -3,18 +3,21 @@
     <b-alert :show="errorMessage.length" variant="danger">
       {{ errorMessage }}
     </b-alert>
-    <div class="mb-3 form-inline" v-if="search">
+    <div class=" form-inline" v-if="search">
       <b-form-input
         type="search"
         v-model="searchValue"
         placeholder="Search..."
-        class="mr-3"
+        class="mb-3"
       />
-      in
+      <span class="mx-3 mb-3">
+        in
+      </span>
+
       <b-form-select
+        class="mb-3"
         v-model="selected"
         :options="searchOptions"
-        class="ml-3"
       ></b-form-select>
     </div>
     <b-table
@@ -31,6 +34,7 @@
       :current-page="currentPage"
       :filter="selected"
       :filter-function="filterTable"
+      responsive="lg"
     >
       <template #cell(email)="data">
         <a :href="`mailto:${data.value.toLowerCase()}`">{{ data.value }}</a>
