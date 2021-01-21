@@ -1,14 +1,32 @@
 <template>
-  <div>
+  <div class="table-content">
     <b-alert :show="errorMessage.length" variant="danger">
       {{ errorMessage }}
     </b-alert>
 
-    <b-table v-if="items" striped hover :items="items" :fields="fields">
+    <b-table
+      v-if="items"
+      striped
+      hover
+      :items="items"
+      :fields="fields"
+      :per-page="pagination ? perPage : 0"
+      :current-page="currentPage"
+      small
+    >
       <template #cell(email)="data">
         <a :href="`mailto:${data.value.toLowerCase()}`">{{ data.value }}</a>
       </template>
     </b-table>
+    <b-pagination
+      class="mt-auto"
+      v-if="items && pagination"
+      align="center"
+      v-model="currentPage"
+      :total-rows="rows"
+      :per-page="perPage"
+      aria-controls="my-table"
+    ></b-pagination>
   </div>
 </template>
 
@@ -24,7 +42,9 @@ export default {
   },
   data: () => ({
     data: [],
-    errorMessage: ""
+    errorMessage: "",
+    perPage: 3,
+    currentPage: 1
   }),
   computed: {
     fields() {
@@ -34,12 +54,13 @@ export default {
           if (prop === this.emailPropertyName) {
             fields.push({
               key: "email",
-              label: prop.replaceAll(".", " ")
-                .replaceAll('_', ' ')
+              label: prop
+                .replaceAll(".", " ")
+                .replaceAll("_", " ")
                 .toLowerCase()
-                .split(' ')
+                .split(" ")
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' '),
+                .join(" "),
 
               sortable: this.sorting
             });
@@ -80,6 +101,9 @@ export default {
         });
       }
       return items;
+    },
+    rows() {
+      return this.items.length;
     }
   },
   async mounted() {
@@ -92,4 +116,11 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+.table-content {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  min-height: 220px;
+}
+</style>
