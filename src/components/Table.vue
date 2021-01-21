@@ -3,16 +3,34 @@
     <b-alert :show="errorMessage.length" variant="danger">
       {{ errorMessage }}
     </b-alert>
-
+    <div class="mb-3 form-inline" v-if="search">
+      <b-form-input
+        type="search"
+        v-model="searchValue"
+        placeholder="Search..."
+        class="mr-3"
+      />
+      in
+      <b-form-select
+        v-model="selected"
+        :options="searchOptions"
+        class="ml-3"
+      ></b-form-select>
+    </div>
     <b-table
+      v-model="visibleItems"
+      @filtered="onFiltered"
       v-if="items"
       striped
       hover
+      small
+      show-empty
       :items="items"
       :fields="fields"
       :per-page="pagination ? perPage : 0"
       :current-page="currentPage"
-      small
+      :filter="selected"
+      :filter-function="filterTable"
     >
       <template #cell(email)="data">
         <a :href="`mailto:${data.value.toLowerCase()}`">{{ data.value }}</a>
@@ -23,7 +41,7 @@
       v-if="items && pagination"
       align="center"
       v-model="currentPage"
-      :total-rows="rows"
+      :total-rows="totalItems"
       :per-page="perPage"
       aria-controls="my-table"
     ></b-pagination>
@@ -41,10 +59,14 @@ export default {
     properties: { type: String, default: "" }
   },
   data: () => ({
+    visibleItems: [],
     data: [],
     errorMessage: "",
+    totalItems: 0,
     perPage: 3,
-    currentPage: 1
+    currentPage: 1,
+    searchValue: "",
+    selected: "all"
   }),
   computed: {
     fields() {
@@ -54,14 +76,7 @@ export default {
           if (prop === this.emailPropertyName) {
             fields.push({
               key: "email",
-              label: prop
-                .replaceAll(".", " ")
-                .replaceAll("_", " ")
-                .toLowerCase()
-                .split(" ")
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" "),
-
+              label: this.formatToLabel(prop),
               sortable: this.sorting
             });
           } else {
@@ -102,8 +117,21 @@ export default {
       }
       return items;
     },
-    rows() {
-      return this.items.length;
+    searchOptions() {
+      const options = [{ value: "all", text: "All columns" }];
+
+      this.propertiesToShow.forEach(prop => {
+        options.push({ value: prop, text: this.formatToLabel(prop) });
+      });
+      return options;
+    }
+  },
+  watch: {
+    items() {
+      this.totalItems = this.items.length;
+    },
+    visibleItems() {
+      this.$emit("changed", this.visibleItems);
     }
   },
   async mounted() {
@@ -111,6 +139,33 @@ export default {
       this.data = (await this.axios.get(this.endpoint)).data;
     } catch (e) {
       this.errorMessage = e.message;
+    }
+  },
+  methods: {
+    formatToLabel(string) {
+      return string
+        .replaceAll(".", " ")
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    },
+
+    filterTable(row, filter) {
+      if (filter === "all") {
+        return Object.values(row).find(val =>
+          val.toUpperCase().includes(this.searchValue.toUpperCase())
+        );
+      } else {
+        return row[filter]
+          .toUpperCase()
+          .includes(this.searchValue.toUpperCase());
+      }
+    },
+    onFiltered(filteredItems) {
+      this.currentPage = 1;
+      this.totalItems = filteredItems.length;
     }
   }
 };

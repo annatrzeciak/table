@@ -8,6 +8,7 @@
         sorting
         pagination
         :properties="'name, email, company.name, address.city, website'"
+        @changed="tableChanged"
       />
     </b-container>
   </div>
@@ -20,6 +21,11 @@ export default {
   name: "App",
   components: {
     Table
+  },
+  methods: {
+    tableChanged(tableItems) {
+      console.log(tableItems);
+    }
   }
 };
 </script>
